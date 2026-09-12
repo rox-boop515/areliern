@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="fr">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notre Atelier — Inventaire du matériel créatif</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&amp;family=Work+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+  <style>
+  :root{
+    --bg:#F1ECE1; --surface:#FFFFFF; --surface-2:#F7F3E9;
+    --ink:#2B2620; --ink-soft:#7A7266; --ink-faint:#AEA795; --line:#E0D9C8;
+    --accent:#3C6E71; --accent-bg:#DCE9E8; --accent-2:#C97A1E; --accent-2-bg:#F7E7CE;
+    --danger:#B8402F; --danger-bg:#F5DCD6; --buy:#8B5E3C; --buy-bg:#EFE2D2;
+    --shadow:0 1px 2px rgba(35,35,35,.05),0 6px 18px rgba(35,35,35,.06);
+    --radius:10px;
+    --font-display:'Oswald',sans-serif; --font-body:'Work Sans',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--ink); font-family:var(--font-body); -webkit-font-smoothing:antialiased; min-height:100vh; }
+  #app{ max-width:920px; margin:0 auto; padding:18px 16px 100px; }
+  button{ font-family:inherit; }
+
+  /* ---------- Header ---------- */
+  .topbar{ margin-bottom:14px; }
+  .topbar .titlerow{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .topbar h1{ font-family:var(--font-display); font-weight:700; letter-spacing:.3px; font-size:26px; margin:0 0 2px; }
+  .topbar .sub{ color:var(--ink-soft); font-size:13.5px; margin-bottom:12px; }
+  .gear-btn{
+    background:var(--surface); border:1px solid var(--line); border-radius:9px;
+    width:44px; height:44px; font-size:18px; cursor:pointer; color:var(--ink);
+    flex:none; box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center;
+  }
+
+  .stats{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .stat{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:8px 12px; flex:1 1 110px; box-shadow:var(--shadow); }
+  .stat .n{ font-family:var(--font-mono); font-weight:600; font-size:19px; line-height:1; }
+  .stat .l{ color:var(--ink-soft); font-size:11.5px; margin-top:3px; }
+  .stat.alert .n{ color:var(--buy); }
+
+  .searchrow{ display:flex; gap:8px; margin-bottom:10px; }
+  .searchrow input[type="text"]{
+    flex:1; padding:10px 12px; border-radius:var(--radius); border:1px solid var(--line);
+    font-family:var(--font-body); font-size:14px; background:var(--surface); min-height:44px;
+  }
+  .searchrow input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+
+  .catchips{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+  .chip{ font-size:12.5px; padding:5px 11px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; min-height:36px; }
+  .chip.active{ background:var(--ink); color:#fff; border-color:var(--ink); }
+
+  /* ---------- Tabs ---------- */
+  .tabs{ display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--line); overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .tab{
+    font-family:var(--font-display); letter-spacing:.2px; font-size:13.5px; font-weight:600;
+    padding:9px 12px; background:none; border:none; color:var(--ink-soft); cursor:pointer;
+    white-space:nowrap; border-bottom:2px solid transparent; min-height:44px;
+  }
+  .tab.active{ color:var(--ink); border-bottom-color:var(--ink); }
+  .tab .badge{ display:inline-block; margin-left:6px; font-family:var(--font-mono); font-size:11px; background:var(--buy); color:#fff; border-radius:8px; padding:1px 6px; }
+
+  /* ---------- Shelves ---------- */
+  .shelf{ background:var(--surface); border-radius:var(--radius); border:1px solid var(--line); box-shadow:var(--shadow); margin-bottom:14px; overflow:hidden; }
+  .shelf-head{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-left:6px solid var(--loc-color,var(--accent)); background:var(--surface-2); }
+  .shelf-head .name{ font-family:var(--font-display); letter-spacing:.3px; font-weight:600; font-size:15px; }
+  .shelf-head .count{ color:var(--ink-soft); font-size:12.5px; font-family:var(--font-mono); }
+  /* FIX: zone de tap agrandie */
+  .shelf-add{
+    border:1px solid var(--line); background:var(--surface); border-radius:7px;
+    width:44px; height:44px; font-size:20px; line-height:1; cursor:pointer; color:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .shelf-body{ padding:10px 14px 14px; }
+  .empty-shelf{ color:var(--ink-faint); font-size:13px; padding:6px 2px; font-style:italic; }
+
+  .item-row{ display:flex; align-items:center; gap:10px; padding:9px 6px; border-bottom:1px solid var(--line); }
+  .item-row:last-child{ border-bottom:none; }
+  .item-photo{ width:44px; height:44px; border-radius:8px; object-fit:cover; flex:none; background:var(--surface-2); border:1px solid var(--line); }
+  .item-photo.placeholder{ display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--ink-faint); }
+  .item-main{ flex:1; min-width:0; }
+  .item-name{ font-weight:600; font-size:14.5px; }
+  .item-meta{ display:flex; gap:6px; flex-wrap:wrap; margin-top:3px; align-items:center; }
+  .loc-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; background:var(--loc-color,var(--accent)); flex:none; }
+  .loc-name{ font-size:11.5px; color:var(--ink-soft); }
+  .badge-tag{ font-family:var(--font-mono); font-size:11px; padding:2px 7px; border-radius:5px; font-weight:600; }
+  .badge-tag.cat{ background:var(--accent-2-bg); color:var(--accent-2); }
+  .badge-tag.buy{ background:var(--buy-bg); color:var(--buy); }
+
+  /* FIX: boutons +/- agrandis */
+  .qty-control{ display:flex; align-items:center; gap:4px; flex:none; }
+  .qty-btn{
+    width:44px; height:44px; border-radius:8px; border:1px solid var(--line);
+    background:var(--surface-2); font-size:20px; cursor:pointer; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .qty-val{ font-family:var(--font-mono); font-weight:600; min-width:36px; text-align:center; font-size:13px; }
+
+  /* FIX: icônes d'action agrandies */
+  .item-actions{ display:flex; gap:2px; flex:none; }
+  .icon-btn{
+    background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:16px;
+    width:44px; height:44px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{ background:var(--surface-2); color:var(--ink); }
+  .icon-btn.on{ color:var(--buy); }
+
+  .btn{
+    font-family:var(--font-display); letter-spacing:.2px; font-weight:600; font-size:13px;
+    background:var(--ink); color:#fff; border:none; border-radius:var(--radius);
+    padding:10px 16px; cursor:pointer; min-height:44px;
+  }
+  .btn.secondary{ background:none; color:var(--ink); border:1px solid var(--line); }
+  .btn.danger{ background:var(--danger); }
+  .btn:disabled{ opacity:.5; cursor:default; }
+
+  .empty-state{ text-align:center; padding:40px 14px; color:var(--ink-soft); }
+  .empty-state .big{ font-family:var(--font-display); font-size:16px; color:var(--ink); margin-bottom:6px; }
+  .empty-state .btn{ margin-top:14px; }
+
+  /* ---------- Liste d'achats ---------- */
+  .buy-form{ display:flex; gap:8px; margin-bottom:14px; }
+  .buy-form input{ flex:1; padding:10px 12px; border-radius:var(--radius); border:1px solid var(--line); font-size:14px; min-height:44px; }
+  .buy-item{ display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; margin-bottom:8px; box-shadow:var(--shadow); }
+  .buy-item .txt{ flex:1; font-size:14.5px; font-weight:600; }
+  .buy-item .why{ color:var(--ink-soft); font-size:12px; font-weight:400; margin-top:2px; }
+
+  /* ---------- FAB — FIX: safe-area iPhone ---------- */
+  .fab{
+    position:fixed; right:20px;
+    bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+    width:56px; height:56px; border-radius:50%;
+    background:var(--ink); color:#fff; border:none; font-size:28px; cursor:pointer;
+    box-shadow:0 4px 14px rgba(35,35,35,.25);
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .foot{ text-align:center; color:var(--ink-faint); font-size:11.5px; margin-top:10px; }
+  .foot button{ background:none; border:none; color:var(--ink-faint); text-decoration:underline; cursor:pointer; font-size:11.5px; padding:6px 4px; min-height:36px; }
+  .foot .warn-line{ color:var(--ink-soft); margin-bottom:4px; }
+
+  .loading,.error-box{ text-align:center; padding:60px 20px; color:var(--ink-soft); font-size:14px; }
+
+  /* ---------- Modal — FIX: dvh pour clavier virtuel ---------- */
+  .overlay{ position:fixed; inset:0; background:rgba(35,30,20,.45); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
+  @media(min-width:640px){ .overlay{ align-items:center; padding:20px; } }
+  .modal{
+    background:var(--surface); width:100%; max-width:480px;
+    max-height:min(92vh, 92dvh);
+    overflow-y:auto; border-radius:16px 16px 0 0; padding:18px 18px 32px;
+  }
+  @media(min-width:640px){ .modal{ border-radius:16px; padding-bottom:18px; } }
+  .modal h2{ font-family:var(--font-display); font-size:18px; margin:0 0 14px; letter-spacing:.2px; }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12.5px; color:var(--ink-soft); margin-bottom:4px; }
+  .field input[type="text"],.field input[type="number"],.field select{
+    width:100%; padding:10px 11px; border-radius:8px; border:1px solid var(--line);
+    font-size:14px; font-family:var(--font-body); background:var(--surface); min-height:44px;
+  }
+  .field-row{ display:flex; gap:10px; }
+  .field-row .field{ flex:1; }
+  .check-row{ display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+  .check-row input{ width:20px; height:20px; cursor:pointer; }
+  .check-row label{ font-size:13.5px; cursor:pointer; }
+
+  .photo-picker{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .photo-preview{ width:84px; height:84px; border-radius:10px; object-fit:cover; background:var(--surface-2); border:1px solid var(--line); flex:none; }
+  .photo-preview.placeholder{ display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--ink-faint); }
+  .photo-actions{ display:flex; flex-direction:column; gap:6px; }
+  .photo-actions label.btn{ display:inline-block; text-align:center; }
+  .photo-actions input[type="file"]{ display:none; }
+
+  .modal-actions{ display:flex; gap:8px; margin-top:16px; }
+  .modal-actions .btn{ flex:1; text-align:center; }
+
+  .manage-section{ margin-bottom:18px; }
+  .manage-section h3{ font-family:var(--font-display); font-size:14px; margin:0 0 8px; color:var(--ink-soft); }
+  .manage-row{ display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--line); }
+  .manage-row:last-child{ border-bottom:none; }
+  .manage-row .swatch{ width:14px; height:14px; border-radius:4px; flex:none; }
+  .manage-row input[type="text"]{ flex:1; padding:8px; border-radius:6px; border:1px solid var(--line); font-size:13.5px; min-height:44px; }
+  .add-inline{ display:flex; gap:6px; margin-top:8px; }
+  .add-inline input{ flex:1; padding:8px 10px; border-radius:8px; border:1px solid var(--line); font-size:13.5px; min-height:44px; }
+
+  /* FIX: Toast décalé pour le FAB safe-area */
+  .toast{
+    position:fixed; bottom:calc(90px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:9px 16px; border-radius:999px; font-size:13px;
+    box-shadow:var(--shadow); z-index:80; opacity:0; pointer-events:none; transition:opacity .2s; white-space:nowrap;
+  }
+  .toast.show{ opacity:1; }
+
+  /* Bannière config manquante */
+  .config-warning{
+    background:#FFF3CD; border:2px solid #FFC107; border-radius:var(--radius);
+    padding:20px; margin-bottom:16px; font-size:14px; color:#664D03; line-height:1.7;
+  }
+  .config-warning strong{ display:block; margin-bottom:8px; font-size:16px; }
+  .config-warning code{ background:#fff3; padding:2px 6px; border-radius:4px; font-family:var(--font-mono); font-size:12px; }
+</style>
+ </head>
+ <body>
+  <div id="app"></div>
+  <div class="toast" id="toast"></div>
+  <script type="module">
+// ═══════════════════════════════════════════════════════
+// 🔥 IMPORTS FIREBASE (ne pas modifier)
+// ═══════════════════════════════════════════════════════
+import { initializeApp }                           from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+// ═══════════════════════════════════════════════════════
+// ⚙️  CONFIGURATION — COLLER VOS VALEURS FIREBASE ICI
+//     (voir le guide-firebase.html pour les obtenir)
+// ═══════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyAOsIskYhP5vyE5NItTQKk_crfIQkdqwUA",
+  authDomain:        "atelier-eb527.firebaseapp.com",
+  databaseURL:       "https://atelier-eb527-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "atelier-eb527",
+  storageBucket:     "atelier-eb527.firebasestorage.app",
+  messagingSenderId: "1006161327894",
+  appId:             "1:1006161327894:web:4b5e040a06fbcec7b84237"
+};
+// ═══════════════════════════════════════════════════════
+
+const CONFIG_OK = !firebaseConfig.apiKey.startsWith('VOTRE');
+const ROOT = 'atelier';
+
+let db = null;
+if(CONFIG_OK){
+  const fbApp = initializeApp(firebaseConfig);
+  db = getDatabase(fbApp);
+}
+
+const app     = document.getElementById('app');
+const toastEl = document.getElementById('toast');
+
+const LOC_COLORS = ['#3C6E71','#B8402F','#C97A1E','#5B6E8C','#8B5E3C','#7A5C8E','#4C7A73','#A98A22'];
+
+let dataLoaded    = false;
+let loadError     = false;
+let meta          = { locations:[], categories:[], items:[], extras:[] };
+let activeTab     = 'all';
+let activeCategory = 'all';
+let searchQuery   = '';
+let photoCache    = {};
+let modalOpen     = false;
+let searchWasFocused = false; // FIX: évite le focus clavier intempestif sur mobile
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s){ return escapeHtml(s); }
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>toastEl.classList.remove('show'), 1800);
+}
+function locOf(id){ return meta.locations.find(l=>l.id===id)||{id:null,label:'Sans lieu',color:'#999'}; }
+function catOf(id){ return meta.categories.find(c=>c.id===id)||null; }
+
+// ─── Stockage Firebase ────────────────────────────────
+async function loadData(){
+  if(!db){ dataLoaded=true; return; }
+  const snapshot = await get(ref(db, ROOT+'/meta'));
+  if(snapshot.exists()){
+    meta = Object.assign({locations:[],categories:[],items:[],extras:[]}, snapshot.val());
+  } else {
+    meta = {
+      locations:[],
+      categories:[
+        {id:uid(),label:'Peinture'},
+        {id:uid(),label:'Papier & carton'},
+        {id:uid(),label:'Tissu & couture'},
+        {id:uid(),label:'Perles & bijoux'},
+        {id:uid(),label:'Colle & adhésifs'},
+        {id:uid(),label:'Outils'},
+        {id:uid(),label:'Décoration'},
+      ],
+      items:[],
+      extras:[]
+    };
+    await saveMeta();
+  }
+  dataLoaded = true;
+}
+
+async function saveMeta(){
+  if(!db) return;
+  try{ await set(ref(db, ROOT+'/meta'), meta); }
+  catch(e){ showToast("Erreur de sauvegarde — réessayez"); }
+}
+
+async function getPhoto(id){
+  if(Object.prototype.hasOwnProperty.call(photoCache, id)) return photoCache[id];
+  if(!db){ photoCache[id]=null; return null; }
+  try{
+    const s = await get(ref(db, ROOT+'/photos/'+id));
+    photoCache[id] = s.exists() ? s.val() : null;
+  }catch(e){ photoCache[id]=null; }
+  return photoCache[id];
+}
+
+async function setPhoto(id, dataUrl){
+  photoCache[id] = dataUrl;
+  if(!db) return;
+  try{ await set(ref(db, ROOT+'/photos/'+id), dataUrl); }
+  catch(e){ showToast("Erreur d'envoi de la photo"); }
+}
+
+async function deletePhoto(id){
+  delete photoCache[id];
+  if(!db) return;
+  try{ await remove(ref(db, ROOT+'/photos/'+id)); }catch(e){}
+}
+
+function compressImage(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const maxDim = 720;
+        let {width,height} = img;
+        if(width>height&&width>maxDim){ height=Math.round(height*maxDim/width); width=maxDim; }
+        else if(height>maxDim){ width=Math.round(width*maxDim/height); height=maxDim; }
+        const canvas=document.createElement('canvas');
+        canvas.width=width; canvas.height=height;
+        canvas.getContext('2d').drawImage(img,0,0,width,height);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror=reject;
+      img.src=e.target.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Sync temps réel via Firebase (remplace le setInterval)
+function startPolling(){
+  if(!db) return;
+  onValue(ref(db, ROOT+'/meta'), snapshot=>{
+    if(modalOpen) return;
+    if(!snapshot.exists()) return;
+    const fresh = snapshot.val();
+    if(JSON.stringify(fresh)!==JSON.stringify(meta)){
+      meta = Object.assign({locations:[],categories:[],items:[],extras:[]}, fresh);
+      render();
+    }
+  });
+}
+
+// ─── Données dérivées ─────────────────────────────────
+function itemMatchesSearch(item){
+  if(!searchQuery.trim()) return true;
+  const q = searchQuery.trim().toLowerCase();
+  const cat = catOf(item.categoryId);
+  return item.name.toLowerCase().includes(q)||(cat&&cat.label.toLowerCase().includes(q));
+}
+function itemMatchesCategory(item){ return activeCategory==='all'||item.categoryId===activeCategory; }
+function visibleItems(){ return meta.items.filter(i=>itemMatchesSearch(i)&&itemMatchesCategory(i)); }
+function computeStats(){
+  return {
+    total:meta.items.length,
+    locations:meta.locations.length,
+    toBuy:meta.items.filter(i=>i.toBuy).length+meta.extras.filter(e=>!e.done).length
+  };
+}
+
+// ─── Rendu ────────────────────────────────────────────
+function itemPhotoTag(item){
+  const cached = photoCache[item.id];
+  if(item.hasPhoto&&cached) return `<img class="item-photo" src="${cached}" alt="">`;
+  return `<div class="item-photo placeholder" data-photo-slot="${item.id}">🎨</div>`;
+}
+
+function ensurePhotoLoaded(item){
+  if(!item.hasPhoto) return;
+  if(Object.prototype.hasOwnProperty.call(photoCache,item.id)) return;
+  getPhoto(item.id).then(val=>{
+    if(!val) return;
+    const slot = app.querySelector(`[data-photo-slot="${item.id}"]`);
+    if(slot){ const img=document.createElement('img'); img.className='item-photo'; img.src=val; slot.replaceWith(img); }
+  });
+}
+
+function renderItemRow(item, opts={}){
+  const cat=catOf(item.categoryId); const loc=locOf(item.locationId);
+  return `<div class="item-row">
+    ${itemPhotoTag(item)}
+    <div class="item-main">
+      <div class="item-name">${escapeHtml(item.name)}</div>
+      <div class="item-meta">
+        ${cat?`<span class="badge-tag cat">${escapeHtml(cat.label)}</span>`:''}
+        ${opts.showLoc?`<span class="loc-dot" style="--loc-color:${loc.color}"></span><span class="loc-name">${escapeHtml(loc.label)}</span>`:''}
+        ${item.toBuy?`<span class="badge-tag buy">à racheter</span>`:''}
+      </div>
+    </div>
+    <div class="qty-control">
+      <button class="qty-btn" data-act="dec" data-id="${item.id}" aria-label="Diminuer">−</button>
+      <span class="qty-val">${item.quantity}${item.unit?' '+escapeHtml(item.unit):''}</span>
+      <button class="qty-btn" data-act="inc" data-id="${item.id}" aria-label="Augmenter">+</button>
+    </div>
+    <div class="item-actions">
+      <button class="icon-btn ${item.toBuy?'on':''}" data-act="togglebuy" data-id="${item.id}" aria-label="À racheter">🛒</button>
+      <button class="icon-btn" data-act="edit" data-id="${item.id}" aria-label="Modifier">✎</button>
+    </div>
+  </div>`;
+}
+
+function renderAllTab(){
+  if(meta.locations.length===0) return `<div class="empty-state">
+    <div class="big">Aucun lieu pour l'instant</div>
+    Créez un premier lieu de rangement (atelier, placard, cave…) pour commencer.
+    <div><button class="btn" id="createFirstLoc">Créer un lieu</button></div>
+  </div>`;
+  const items=visibleItems(); let html='';
+  meta.locations.forEach(loc=>{
+    const locItems=items.filter(i=>i.locationId===loc.id);
+    if((searchQuery.trim()||activeCategory!=='all')&&locItems.length===0) return;
+    html+=`<div class="shelf">
+      <div class="shelf-head" style="--loc-color:${loc.color}">
+        <div><div class="name">${escapeHtml(loc.label)}</div><div class="count">${locItems.length} objet${locItems.length>1?'s':''}</div></div>
+        <button class="shelf-add" data-act="add" data-loc="${loc.id}" aria-label="Ajouter ici">+</button>
+      </div>
+      <div class="shelf-body">
+        ${locItems.length?locItems.map(i=>renderItemRow(i,{showLoc:false})).join(''):`<div class="empty-shelf">Rien ici pour l'instant.</div>`}
+      </div>
+    </div>`;
+  });
+  if(!html) return `<div class="empty-state"><div class="big">Aucun résultat</div>Aucun objet ne correspond à cette recherche.</div>`;
+  return html;
+}
+
+function renderLocTab(locId){
+  const loc=locOf(locId); const items=visibleItems().filter(i=>i.locationId===locId);
+  return `<div class="shelf">
+    <div class="shelf-head" style="--loc-color:${loc.color}">
+      <div><div class="name">${escapeHtml(loc.label)}</div><div class="count">${items.length} objet${items.length>1?'s':''}</div></div>
+      <button class="shelf-add" data-act="add" data-loc="${loc.id}" aria-label="Ajouter ici">+</button>
+    </div>
+    <div class="shelf-body">
+      ${items.length?items.map(i=>renderItemRow(i,{showLoc:false})).join(''):`<div class="empty-shelf">Rien ici pour l'instant.</div>`}
+    </div>
+  </div>`;
+}
+
+function renderBuyTab(){
+  const flagged=meta.items.filter(i=>i.toBuy); const extras=meta.extras.filter(e=>!e.done);
+  let html=`<div class="buy-form">
+    <input type="text" id="extraInput" placeholder="Ajouter une note d'achat (hors inventaire)">
+    <button class="btn" id="extraAddBtn">Ajouter</button>
+  </div>`;
+  if(!flagged.length&&!extras.length){
+    return html+`<div class="empty-state"><div class="big">Rien à racheter</div>Appuyez sur 🛒 sur un objet pour l'ajouter ici.</div>`;
+  }
+  flagged.forEach(item=>{
+    const loc=locOf(item.locationId);
+    html+=`<div class="buy-item">
+      ${itemPhotoTag(item)}
+      <div style="flex:1;"><div class="txt">${escapeHtml(item.name)}</div><div class="why">${escapeHtml(loc.label)}</div></div>
+      <button class="icon-btn" data-act="togglebuy" data-id="${item.id}" aria-label="Retirer">✓</button>
+    </div>`;
+  });
+  extras.forEach(ex=>{
+    html+=`<div class="buy-item">
+      <div class="txt" style="flex:1;font-weight:500;">${escapeHtml(ex.text)}</div>
+      <button class="icon-btn" data-act="rmextra" data-id="${ex.id}" aria-label="Retirer">✓</button>
+    </div>`;
+  });
+  return html;
+}
+
+function render(){
+  // FIX: mémoriser si la recherche était active AVANT de remplacer le DOM
+  searchWasFocused = document.activeElement?.id==='searchInput';
+
+  if(!CONFIG_OK){
+    app.innerHTML=`<div class="topbar"><h1>🪡 Notre Atelier</h1></div>
+    <div class="config-warning">
+      <strong>⚙️ Configuration Firebase manquante</strong>
+      Ouvrez ce fichier dans un éditeur de texte (Bloc-notes sur Windows, TextEdit sur Mac)
+      et remplacez les valeurs <code>VOTRE_…</code> par vos informations Firebase.<br><br>
+      Suivez le <strong>guide-firebase.html</strong> joint pour les obtenir en 15 minutes.
+    </div>`;
+    return;
+  }
+
+  if(loadError){
+    app.innerHTML=`<div class="error-box">❌ Impossible de charger l'inventaire.<br>Vérifiez votre connexion internet et rechargez la page.<br><br>Si le problème persiste, vérifiez la configuration Firebase.</div>`;
+    return;
+  }
+  if(!dataLoaded){
+    app.innerHTML=`<div class="loading">⏳ Chargement de l'atelier…</div>`;
+    return;
+  }
+
+  const stats=computeStats();
+  let bodyHtml='';
+  if(activeTab==='all') bodyHtml=renderAllTab();
+  else if(activeTab==='buy') bodyHtml=renderBuyTab();
+  else bodyHtml=renderLocTab(activeTab);
+
+  app.innerHTML=`
+    <div class="topbar">
+      <div class="titlerow">
+        <div><h1>Notre Atelier</h1><div class="sub">Inventaire du matériel créatif, partagé</div></div>
+        <button class="gear-btn" id="manageBtn" aria-label="Gérer lieux et catégories">⚙</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="n">${stats.total}</div><div class="l">Objets suivis</div></div>
+        <div class="stat"><div class="n">${stats.locations}</div><div class="l">Lieux</div></div>
+        <div class="stat ${stats.toBuy>0?'alert':''}"><div class="n">${stats.toBuy}</div><div class="l">À racheter</div></div>
+      </div>
+      ${activeTab!=='buy'?`
+      <div class="searchrow"><input type="text" id="searchInput" placeholder="Rechercher un objet…" value="${escapeAttr(searchQuery)}"></div>
+      ${meta.categories.length?`<div class="catchips">
+        <button class="chip ${activeCategory==='all'?'active':''}" data-cat="all">Toutes catégories</button>
+        ${meta.categories.map(c=>`<button class="chip ${activeCategory===c.id?'active':''}" data-cat="${c.id}">${escapeHtml(c.label)}</button>`).join('')}
+      </div>`:''}
+      `:''}
+    </div>
+    <div class="tabs">
+      <button class="tab ${activeTab==='all'?'active':''}" data-tab="all">Tous les lieux</button>
+      ${meta.locations.map(l=>`<button class="tab ${activeTab===l.id?'active':''}" data-tab="${l.id}">${escapeHtml(l.label)}</button>`).join('')}
+      <button class="tab ${activeTab==='buy'?'active':''}" data-tab="buy">À racheter ${stats.toBuy>0?`<span class="badge">${stats.toBuy}</span>`:''}</button>
+    </div>
+    <main>${bodyHtml}</main>
+    <button class="fab" id="fabAdd" aria-label="Ajouter un objet">+</button>
+    <footer class="foot">
+      <div class="warn-line">Partagé en direct — toutes les utilisatrices voient les mêmes données.</div>
+      <button id="exportBtn">Exporter une sauvegarde</button>
+      · <button id="importBtn">Importer une sauvegarde</button>
+      · <button id="resetBtn">Réinitialiser toutes les données</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+    </footer>`;
+
+  meta.items.forEach(it=>{ if(it.hasPhoto) ensurePhotoLoaded(it); });
+  attachEvents();
+}
+
+// ─── Mutations ────────────────────────────────────────
+async function adjustQty(id, delta){
+  const item=meta.items.find(i=>i.id===id); if(!item) return;
+  item.quantity=Math.max(0,(item.quantity||0)+delta);
+  render(); await saveMeta();
+}
+async function toggleBuy(id){
+  const item=meta.items.find(i=>i.id===id); if(!item) return;
+  item.toBuy=!item.toBuy; render(); await saveMeta();
+}
+async function removeExtra(id){
+  meta.extras=meta.extras.filter(e=>e.id!==id); render(); await saveMeta();
+}
+async function addExtra(text){
+  text=(text||'').trim(); if(!text) return;
+  meta.extras.push({id:uid(),text,done:false}); render(); await saveMeta();
+}
+async function deleteItem(id){
+  meta.items=meta.items.filter(i=>i.id!==id); render(); await saveMeta(); await deletePhoto(id);
+}
+
+// ─── Modals objet ─────────────────────────────────────
+let editingId=null, pendingPhotoData=null, pendingPhotoRemoved=false;
+
+function openAddModal(locId){
+  editingId=null; pendingPhotoData=null; pendingPhotoRemoved=false;
+  openItemModal({name:'',categoryId:meta.categories[0]?.id||'',locationId:locId||(meta.locations[0]?.id||''),quantity:1,unit:'',toBuy:false,hasPhoto:false},true);
+}
+function openEditModal(id){
+  const item=meta.items.find(i=>i.id===id); if(!item) return;
+  editingId=id; pendingPhotoData=null; pendingPhotoRemoved=false;
+  openItemModal(item,false);
+}
+
+function locationOptions(sel){ return meta.locations.map(l=>`<option value="${l.id}" ${l.id===sel?'selected':''}>${escapeHtml(l.label)}</option>`).join(''); }
+function categoryOptions(sel){ return meta.categories.map(c=>`<option value="${c.id}" ${c.id===sel?'selected':''}>${escapeHtml(c.label)}</option>`).join(''); }
+
+function openItemModal(item, isNew){
+  modalOpen=true;
+  const overlay=document.createElement('div'); overlay.className='overlay'; overlay.id='itemOverlay';
+  const existingPhoto=(!isNew&&item.hasPhoto)?getPhoto(item.id):Promise.resolve(null);
+
+  overlay.innerHTML=`<div class="modal">
+    <h2>${isNew?'Ajouter un objet':'Modifier cet objet'}</h2>
+    <div class="photo-picker">
+      <div id="photoPreviewWrap"><div class="photo-preview placeholder">🎨</div></div>
+      <div class="photo-actions">
+        <label class="btn secondary" for="photoInput">📷 Choisir une photo</label>
+        <input type="file" id="photoInput" accept="image/*">
+        <button class="btn secondary" id="removePhotoBtn" type="button" style="display:none">Retirer la photo</button>
+      </div>
+    </div>
+    <div class="field"><label>Nom de l'objet</label><input type="text" id="fName" value="${escapeAttr(item.name)}" placeholder="Ex. Pinceaux plats n°8"></div>
+    <div class="field-row">
+      <div class="field"><label>Catégorie</label><select id="fCategory">${categoryOptions(item.categoryId)}</select></div>
+      <div class="field"><label>Lieu</label><select id="fLocation">${locationOptions(item.locationId)}</select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Quantité</label><input type="number" id="fQty" value="${item.quantity}" min="0"></div>
+      <div class="field"><label>Unité (optionnel)</label><input type="text" id="fUnit" value="${escapeAttr(item.unit||'')}" placeholder="tubes, m, pcs…"></div>
+    </div>
+    <div class="check-row"><input type="checkbox" id="fToBuy" ${item.toBuy?'checked':''}><label for="fToBuy">Marquer « à racheter »</label></div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="cancelBtn" type="button">Annuler</button>
+      ${!isNew?`<button class="btn danger" id="deleteBtn" type="button">Supprimer</button>`:''}
+      <button class="btn" id="saveBtn" type="button">${isNew?'Ajouter':'Enregistrer'}</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  const previewWrap=overlay.querySelector('#photoPreviewWrap');
+  const removeBtn=overlay.querySelector('#removePhotoBtn');
+  function setPreview(src){
+    if(src){ previewWrap.innerHTML=`<img class="photo-preview" src="${src}">`; removeBtn.style.display='inline-block'; }
+    else { previewWrap.innerHTML=`<div class="photo-preview placeholder">🎨</div>`; removeBtn.style.display='none'; }
+  }
+  existingPhoto.then(val=>{ if(val&&!pendingPhotoRemoved) setPreview(val); });
+
+  overlay.querySelector('#photoInput').addEventListener('change', async e=>{
+    const file=e.target.files[0]; if(!file) return;
+    try{ pendingPhotoData=await compressImage(file); pendingPhotoRemoved=false; setPreview(pendingPhotoData); }
+    catch(e){ showToast("Impossible de lire cette image"); }
+  });
+  removeBtn.addEventListener('click',()=>{ pendingPhotoData=null; pendingPhotoRemoved=true; setPreview(null); });
+
+  function closeModal(){ modalOpen=false; overlay.remove(); }
+  overlay.querySelector('#cancelBtn').addEventListener('click',closeModal);
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) closeModal(); });
+
+  if(!isNew){
+    overlay.querySelector('#deleteBtn').addEventListener('click',async()=>{
+      if(!confirm("Supprimer cet objet de l'inventaire ?")) return;
+      await deleteItem(item.id); closeModal();
+    });
+  }
+
+  overlay.querySelector('#saveBtn').addEventListener('click',async()=>{
+    const name=overlay.querySelector('#fName').value.trim();
+    if(!name){ showToast("Le nom est obligatoire"); return; }
+    const categoryId=overlay.querySelector('#fCategory').value;
+    const locationId=overlay.querySelector('#fLocation').value;
+    const quantity=Math.max(0,parseInt(overlay.querySelector('#fQty').value,10)||0);
+    const unit=overlay.querySelector('#fUnit').value.trim();
+    const toBuy=overlay.querySelector('#fToBuy').checked;
+
+    let targetId=item.id;
+    if(isNew){
+      targetId=uid();
+      meta.items.push({id:targetId,name,categoryId,locationId,quantity,unit,toBuy,hasPhoto:false});
+    } else {
+      Object.assign(meta.items.find(i=>i.id===targetId),{name,categoryId,locationId,quantity,unit,toBuy});
+    }
+    if(pendingPhotoData){ await setPhoto(targetId,pendingPhotoData); meta.items.find(i=>i.id===targetId).hasPhoto=true; }
+    else if(pendingPhotoRemoved){ await deletePhoto(targetId); meta.items.find(i=>i.id===targetId).hasPhoto=false; }
+    await saveMeta(); closeModal(); render();
+    showToast(isNew?'Objet ajouté ✓':'Objet mis à jour ✓');
+  });
+}
+
+// ─── Modal gérer lieux & catégories ──────────────────
+function openManageModal(){
+  modalOpen=true;
+  const overlay=document.createElement('div'); overlay.className='overlay';
+  const locRow=loc=>{
+    const count=meta.items.filter(i=>i.locationId===loc.id).length;
+    return `<div class="manage-row"><span class="swatch" style="background:${loc.color}"></span>
+      <input type="text" data-loclabel="${loc.id}" value="${escapeAttr(loc.label)}">
+      <button class="icon-btn" data-delloc="${loc.id}" aria-label="Supprimer">🗑</button></div>`;
+  };
+  const catRow=cat=>{
+    const count=meta.items.filter(i=>i.categoryId===cat.id).length;
+    return `<div class="manage-row">
+      <input type="text" data-catlabel="${cat.id}" value="${escapeAttr(cat.label)}" style="flex:1">
+      <button class="icon-btn" data-delcat="${cat.id}" aria-label="Supprimer">🗑</button></div>`;
+  };
+
+  overlay.innerHTML=`<div class="modal">
+    <h2>Gérer lieux &amp; catégories</h2>
+    <div class="manage-section">
+      <h3>Lieux de rangement</h3>
+      <div id="locList">${meta.locations.map(locRow).join('')||'<div class="empty-shelf">Aucun lieu.</div>'}</div>
+      <div class="add-inline"><input type="text" id="newLocInput" placeholder="Nouveau lieu (ex. Cave)"><button class="btn secondary" id="addLocBtn">Ajouter</button></div>
+    </div>
+    <div class="manage-section">
+      <h3>Catégories</h3>
+      <div id="catList">${meta.categories.map(catRow).join('')||'<div class="empty-shelf">Aucune catégorie.</div>'}</div>
+      <div class="add-inline"><input type="text" id="newCatInput" placeholder="Nouvelle catégorie"><button class="btn secondary" id="addCatBtn">Ajouter</button></div>
+    </div>
+    <div class="modal-actions"><button class="btn" id="closeManageBtn" type="button">Fermer</button></div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  function closeModal(){ modalOpen=false; overlay.remove(); render(); }
+  overlay.querySelector('#closeManageBtn').addEventListener('click',closeModal);
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) closeModal(); });
+
+  async function refreshLists(){
+    overlay.querySelector('#locList').innerHTML=meta.locations.map(locRow).join('')||'<div class="empty-shelf">Aucun lieu.</div>';
+    overlay.querySelector('#catList').innerHTML=meta.categories.map(catRow).join('')||'<div class="empty-shelf">Aucune catégorie.</div>';
+    bindRows(); await saveMeta();
+  }
+
+  function bindRows(){
+    overlay.querySelectorAll('[data-loclabel]').forEach(inp=>{
+      inp.addEventListener('change',async()=>{
+        const loc=meta.locations.find(l=>l.id===inp.dataset.loclabel);
+        if(loc&&inp.value.trim()){ loc.label=inp.value.trim(); await saveMeta(); showToast('Lieu renommé'); }
+      });
+    });
+    overlay.querySelectorAll('[data-catlabel]').forEach(inp=>{
+      inp.addEventListener('change',async()=>{
+        const cat=meta.categories.find(c=>c.id===inp.dataset.catlabel);
+        if(cat&&inp.value.trim()){ cat.label=inp.value.trim(); await saveMeta(); showToast('Catégorie renommée'); }
+      });
+    });
+    overlay.querySelectorAll('[data-delloc]').forEach(btn=>{
+      btn.addEventListener('click',async()=>{
+        const id=btn.dataset.delloc;
+        const count=meta.items.filter(i=>i.locationId===id).length;
+        if(count>0&&!confirm(`${count} objet(s) sont rangés ici. Les supprimer aussi ?`)) return;
+        meta.items=meta.items.filter(i=>i.locationId!==id);
+        meta.locations=meta.locations.filter(l=>l.id!==id);
+        if(activeTab===id) activeTab='all';
+        await refreshLists();
+      });
+    });
+    overlay.querySelectorAll('[data-delcat]').forEach(btn=>{
+      btn.addEventListener('click',async()=>{
+        const id=btn.dataset.delcat;
+        const count=meta.items.filter(i=>i.categoryId===id).length;
+        if(count>0&&!confirm(`${count} objet(s) utilisent cette catégorie. Continuer ?`)) return;
+        meta.categories=meta.categories.filter(c=>c.id!==id);
+        meta.items.forEach(i=>{ if(i.categoryId===id) i.categoryId=''; });
+        if(activeCategory===id) activeCategory='all';
+        await refreshLists();
+      });
+    });
+  }
+  bindRows();
+
+  overlay.querySelector('#addLocBtn').addEventListener('click',async()=>{
+    const inp=overlay.querySelector('#newLocInput'); const label=inp.value.trim(); if(!label) return;
+    meta.locations.push({id:uid(),label,color:LOC_COLORS[meta.locations.length%LOC_COLORS.length]});
+    inp.value=''; await refreshLists();
+  });
+  overlay.querySelector('#addCatBtn').addEventListener('click',async()=>{
+    const inp=overlay.querySelector('#newCatInput'); const label=inp.value.trim(); if(!label) return;
+    meta.categories.push({id:uid(),label}); inp.value=''; await refreshLists();
+  });
+}
+
+// ─── Export / Import / Reset ──────────────────────────
+async function exportData(){
+  const photos={};
+  for(const item of meta.items){ if(item.hasPhoto){ const v=await getPhoto(item.id); if(v) photos[item.id]=v; } }
+  const blob=new Blob([JSON.stringify({meta,photos,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='notre-atelier-sauvegarde.json'; document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url); showToast('Sauvegarde exportée ✓');
+}
+
+async function importDataFromFile(file){
+  try{
+    const payload=JSON.parse(await file.text());
+    if(!payload.meta) throw new Error('format invalide');
+    if(!confirm('Importer cette sauvegarde remplacera toutes les données actuelles. Continuer ?')) return;
+    meta=payload.meta; await saveMeta();
+    if(payload.photos){ for(const [id,dataUrl] of Object.entries(payload.photos)) await setPhoto(id,dataUrl); }
+    photoCache=payload.photos||{}; render(); showToast('Sauvegarde importée ✓');
+  }catch(e){ showToast("Fichier de sauvegarde invalide"); }
+}
+
+async function resetAll(){
+  if(!confirm('Supprimer TOUTES les données pour tout le monde ? Cette action est irréversible.')) return;
+  try{ await remove(ref(db, ROOT)); }catch(e){}
+  photoCache={}; meta={locations:[],categories:[],items:[],extras:[]};
+  await saveMeta(); render(); showToast('Données réinitialisées');
+}
+
+// ─── Événements ───────────────────────────────────────
+function attachEvents(){
+  app.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{ activeTab=t.dataset.tab; render(); }));
+  app.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ activeCategory=c.dataset.cat; render(); }));
+
+  const fab=document.getElementById('fabAdd');
+  if(fab) fab.addEventListener('click',()=>openAddModal(activeTab!=='all'&&activeTab!=='buy'?activeTab:null));
+
+  const createFirstLoc=document.getElementById('createFirstLoc');
+  if(createFirstLoc) createFirstLoc.addEventListener('click',openManageModal);
+  const manageBtn=document.getElementById('manageBtn');
+  if(manageBtn) manageBtn.addEventListener('click',openManageModal);
+  const resetBtn=document.getElementById('resetBtn');
+  if(resetBtn) resetBtn.addEventListener('click',resetAll);
+  const exportBtn=document.getElementById('exportBtn');
+  if(exportBtn) exportBtn.addEventListener('click',exportData);
+  const importBtn=document.getElementById('importBtn');
+  const importFile=document.getElementById('importFile');
+  if(importBtn&&importFile){
+    importBtn.addEventListener('click',()=>importFile.click());
+    importFile.addEventListener('change',e=>{ const f=e.target.files[0]; if(f) importDataFromFile(f); importFile.value=''; });
+  }
+
+  const searchInput=document.getElementById('searchInput');
+  if(searchInput){
+    searchInput.addEventListener('input',e=>{ searchQuery=e.target.value; render(); });
+    // FIX: ne refocus que si la recherche était active avant le re-render
+    if(searchWasFocused){
+      const pos=searchInput.value.length;
+      searchInput.focus();
+      searchInput.setSelectionRange(pos,pos);
+    }
+  }
+
+  app.querySelectorAll('[data-act="add"]').forEach(b=>b.addEventListener('click',()=>openAddModal(b.dataset.loc)));
+  app.querySelectorAll('[data-act="edit"]').forEach(b=>b.addEventListener('click',()=>openEditModal(b.dataset.id)));
+  app.querySelectorAll('[data-act="inc"]').forEach(b=>b.addEventListener('click',()=>adjustQty(b.dataset.id,1)));
+  app.querySelectorAll('[data-act="dec"]').forEach(b=>b.addEventListener('click',()=>adjustQty(b.dataset.id,-1)));
+  app.querySelectorAll('[data-act="togglebuy"]').forEach(b=>b.addEventListener('click',()=>toggleBuy(b.dataset.id)));
+  app.querySelectorAll('[data-act="rmextra"]').forEach(b=>b.addEventListener('click',()=>removeExtra(b.dataset.id)));
+
+  const extraAddBtn=document.getElementById('extraAddBtn');
+  const extraInput=document.getElementById('extraInput');
+  if(extraAddBtn&&extraInput){
+    const submit=()=>{ addExtra(extraInput.value); extraInput.value=''; };
+    extraAddBtn.addEventListener('click',submit);
+    extraInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────
+(async function init(){
+  render();
+  if(!CONFIG_OK) return;
+  try{ await loadData(); }
+  catch(e){ loadError=true; render(); return; }
+  render();
+  startPolling();
+})();
+</script>
+ </body>
+</html>
